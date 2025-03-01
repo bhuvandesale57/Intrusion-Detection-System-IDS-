@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Packet Predictions History</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 90%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #ddd;
+        }
+        .malicious {
+            background-color: #f99; /* light red */
+        }
+        .normal {
+            background-color: #9f9; /* light green */
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Packet Predictions History</h1>
+    <table id="predictionsTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Timestamp</th>
+                <th>Source IP</th>
+                <th>Destination IP</th>
+                <th>Protocol</th>
+                <th>Type</th>
+                <th>Prediction</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="7">No predictions yet.</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+      function fetchPredictions() {
+         fetch('/predictions')
+         .then(response => response.json())
+         .then(data => {
+            let tbody = document.getElementById("predictionsTable").getElementsByTagName("tbody")[0];
+            tbody.innerHTML = "";
+            if(data && data.length > 0) {
+                data.forEach((item, index) => {
+                    let row = document.createElement("tr");
+
+                    // Assume prediction is an array and use its first element as the probability.
+                    let prob = item.prediction[0];
+                    let type = (prob > 0.97) ? "Malicious" : "Normal";
+
+                    // Color row: red for malicious, green for normal.
+                    row.className = (type === "Malicious") ? "malicious" : "normal";
+
+                    // Serial number
+                    let cellIndex = document.createElement("td");
+                    cellIndex.innerText = index + 1;
+                    row.appendChild(cellIndex);
+
+                    // Timestamp
+                    let cellTimestamp = document.createElement("td");
+                    cellTimestamp.innerText = item.timestamp;
+                    row.appendChild(cellTimestamp);
+
+                    // Source IP
+                    let cellSource = document.createElement("td");
+                    cellSource.innerText = item.source_ip;
+                    row.appendChild(cellSource);
+
+                    // Destination IP
+                    let cellDestination = document.createElement("td");
+                    cellDestination.innerText = item.destination_ip;
+                    row.appendChild(cellDestination);
+
+                    // Protocol
+                    let cellProtocol = document.createElement("td");
+                    cellProtocol.innerText = item.protocol;
+                    row.appendChild(cellProtocol);
+
+                    // Type column (Malicious or Normal)
+                    let cellType = document.createElement("td");
+                    cellType.innerText = type;
+                    row.appendChild(cellType);
+
+                    // Prediction (displayed as JSON string)
+                    let cellPrediction = document.createElement("td");
+                    cellPrediction.innerText = JSON.stringify(item.prediction);
+                    row.appendChild(cellPrediction);
+
+                    tbody.appendChild(row);
+                });
+            } else {
+                let row = document.createElement("tr");
+                let cell = document.createElement("td");
+                cell.colSpan = 7;
+                cell.innerText = "No predictions yet.";
+                row.appendChild(cell);
+                tbody.appendChild(row);
+            }
+         })
+         .catch(error => {
+             console.error("Error fetching predictions:", error);
+         });
+      }
+      // Poll for predictions every 5 seconds.
+      setInterval(fetchPredictions, 5000);
+      fetchPredictions();
+    </script>
+</body>
+</html>
